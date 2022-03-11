@@ -202,7 +202,7 @@ void free_token_list(TokenList *list) {
  * ------------- Parser stuff ------------- 
  */
 
-#define MAX_LITERALS 8
+#define MAX_LITERALS 128
 
 typedef enum {
     OP_ADD,
@@ -216,6 +216,7 @@ typedef enum {
 typedef enum {
     VAL_NONE,
     VAL_INTEGER,
+    VAL_RATIONAL,
     VAL_STRING,
     VAL_FLOAT,
     VAL_BOOL,
@@ -240,6 +241,7 @@ typedef struct _Opcode {
 typedef struct _Literal {
     union {
         mpz_t Integer;
+        mpq_t Rational;
         char *String;
         double Float;
         bool Bool;
@@ -406,8 +408,6 @@ void push_opcode_from_token(OpcodeList *list, Token token) {
  * atom   := number | "(" expr ")"
  */
 
-// 1 + 2 + 3 + 4 + 5 -> 1 2 add 3 add 4 add 5 add
-
 #define ADVANCE(node) *node = (*node)->next
 
 void expr(OpcodeList *opcodes, TokenListNode **current_node) {
@@ -437,7 +437,7 @@ void term(OpcodeList *opcodes, TokenListNode **current_node) {
 
         /* parse next factor */
         ADVANCE(current_node);
-        factor(opcodes, current_node);
+        term(opcodes, current_node);
 
         /* push op */
         push_opcode_from_token(opcodes, op);
@@ -454,7 +454,7 @@ void factor(OpcodeList *opcodes, TokenListNode **current_node) {
 
         /* parse next atom */
         ADVANCE(current_node);
-        atom(opcodes, current_node);
+        factor(opcodes, current_node);
 
         /* push op */
         push_opcode_from_token(opcodes, op);
@@ -472,8 +472,9 @@ void atom(OpcodeList *opcodes, TokenListNode **current_node) {
         ADVANCE(current_node);
         expr(opcodes, current_node);
 
+        ADVANCE(current_node);
         expect(*current_node, RPAREN);
-    }
+    } // else if minus then parse unary minus
 
     // ADVANCE(current_node);
 }

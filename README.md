@@ -6,10 +6,10 @@ Arithmetic expressions are first tokenized in a way that ignores whitespace and 
 
 Then this list is parsed using recursive descent according to the following grammar:
 ```
-expr   := term { ("+" | "-") expr }
-term   := factor { ("*" | "/") factor }
-factor := atom { "^" atom }
-atom   := number | "(" expr ")"
+expr   := term { (“+” | “-”) expr }
+term   := factor { (“*” | “/” | “%”) factor }
+factor := atom { “^” atom }
+atom   := number | “(” expr “)” 
 ```
 which generates the bytecode:
 `OP_PUSH_INT 3, OP_PUSH_INT 3, OP_PUSH_INT 2, OP_MUL, OP_ADD`

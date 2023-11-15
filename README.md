@@ -1,4 +1,3 @@
-
 # gmp-calculator
 Calculator that uses recursive descent to parse arithmetic expressions and stores numbers as GMP (GNU multiple precision arithmetic library) types to calculate with arbitrary precision. Uses GNU Readline for input with in-line editing and history.
 
@@ -33,4 +32,9 @@ Because the calculator uses GMP, it is able to evaluate expressions with arbitra
 0119902801704748944874269247421088235368084850725022405194525875428753
 4997655857267022963396257521263747789778550155264652260998886991401354
 0483809865681250419497686697771009
+```
+
+```
+>> (3^2203 - 3) % 2203
+0
 ```

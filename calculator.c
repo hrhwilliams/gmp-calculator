@@ -59,6 +59,7 @@ typedef enum {
     MINUS,
     STAR,
     FORWARD_SLASH,
+    PERCENT,
     CARET,
     LPAREN,
     RPAREN
@@ -71,6 +72,7 @@ const char *token_names[] = {
     [MINUS] = "MINUS",
     [STAR] = "STAR",
     [FORWARD_SLASH] = "FORWARD_SLASH",
+    [PERCENT] = "PERCENT",
     [CARET] = "CARET",
     [LPAREN] = "LPAREN",
     [RPAREN] = "RPAREN",
@@ -158,6 +160,7 @@ unsigned int tokenize(char *string, TokenList *list) {
         case '-': add_token(list, &string[string_index++], MINUS, 1); break;
         case '*': add_token(list, &string[string_index++], STAR, 1);  break;
         case '/': add_token(list, &string[string_index++], FORWARD_SLASH, 1); break;
+        case '%': add_token(list, &string[string_index++], PERCENT, 1); break;
         case '^': add_token(list, &string[string_index++], CARET, 1); break;
         case '(': add_token(list, &string[string_index++], LPAREN, 1); break;
         case ')': add_token(list, &string[string_index++], RPAREN, 1); break;
@@ -209,6 +212,7 @@ typedef enum {
     OP_SUB,
     OP_MUL,
     OP_DIV,
+    OP_MOD,
     OP_POW,
     OP_PUSH_INTEGER,
 } OpcodeIdentifier;
@@ -227,6 +231,7 @@ const char *opcode_names[] = {
     [OP_SUB] = "OP_SUB",
     [OP_MUL] = "OP_MUL",
     [OP_DIV] = "OP_DIV",
+    [OP_MOD] = "OP_MOD",
     [OP_POW] = "OP_POW",
     [OP_PUSH_INTEGER] = "OP_PUSH_INTEGER",
 };
@@ -295,7 +300,7 @@ bool peek_mul_op(TokenListNode *current_node) {
         return false;
     }
 
-    if (next_node->token.type == STAR || next_node->token.type == FORWARD_SLASH) {
+    if (next_node->token.type == STAR || next_node->token.type == FORWARD_SLASH || next_node->token.type == PERCENT) {
         return true;
     }
 
@@ -386,6 +391,7 @@ void push_opcode_from_token(OpcodeList *list, Token token) {
             case MINUS: node->opcode.as.opcode = OP_SUB; break;
             case STAR:  node->opcode.as.opcode = OP_MUL; break;
             case FORWARD_SLASH: node->opcode.as.opcode = OP_DIV; break;
+            case PERCENT: node->opcode.as.opcode = OP_MOD; break;
             case CARET: node->opcode.as.opcode = OP_POW; break;
             default: /* TODO signal an error */ break;
         }
@@ -580,6 +586,16 @@ void mul_numbers() {
     stack_top -= 1;
 }
 
+void div_numbers() {
+    mpz_div(GET_INT(stack_top - 2), GET_INT(stack_top - 2), GET_INT(stack_top - 1));
+    stack_top -= 1;
+}
+
+void mod_numbers() {
+    mpz_mod(GET_INT(stack_top - 2), GET_INT(stack_top - 2), GET_INT(stack_top - 1));
+    stack_top -= 1;
+}
+
 void pow_numbers() {
     const unsigned long pow = mpz_get_ui(GET_INT(stack_top - 1));
     mpz_pow_ui(GET_INT(stack_top - 2), GET_INT(stack_top - 2), pow);
@@ -602,6 +618,7 @@ void interpret(OpcodeList *list) {
         case OP_ADD: add_numbers(); break;
         case OP_SUB: sub_numbers(); break;
         case OP_MUL: mul_numbers(); break;
+        case OP_MOD: mod_numbers(); break;
         case OP_POW: pow_numbers(); break;
         // case OP_DIV: break;
         default: error("InterpreterError", "Unknown opcode '%d'", code[pc].as.opcode);
